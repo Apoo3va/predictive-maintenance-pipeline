@@ -43,5 +43,20 @@ services:
     volumes:
       - ./spark:/spark-jobs
 
+  airflow:
+    image: apache/airflow:2.10.5
+    command: standalone
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:postgres@postgres:5432/airflow_db
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW_CONN_TELEMETRY_DB: postgresql://postgres:postgres@postgres:5432/telemetry_db
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+
 volumes:
   pgdata:
