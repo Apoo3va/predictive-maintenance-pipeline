@@ -31,3 +31,4 @@ CREATE TABLE IF NOT EXISTS device_daily_kpis (
 
 CREATE INDEX IF NOT EXISTS idx_telemetry_device_time ON raw_telemetry(device_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_alerts_device_time ON sensor_alerts(device_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_telemetry_ts_brin ON raw_telemetry USING BRIN (timestamp);
