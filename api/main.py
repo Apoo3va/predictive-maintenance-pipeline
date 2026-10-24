@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
+from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -40,4 +41,23 @@ def list_machines():
         FROM device_daily_kpis
         ORDER BY device_id, metric_date DESC
         """
+    )
+@app.get("/alerts")
+def list_alerts(
+    device_id: Optional[str] = None,
+    alert_level: Optional[str] = Query(None, description="WARNING or CRITICAL"),
+    limit: int = Query(20, ge=1, le=200),
+):
+    """Most recent alerts, newest first. Optionally filter by turbine or severity."""
+    sql = """
+        SELECT device_id, timestamp, round(anomaly_score::numeric, 2) AS anomaly_score, alert_level
+        FROM sensor_alerts
+        WHERE (%(device_id)s IS NULL OR device_id = %(device_id)s)
+          AND (%(alert_level)s IS NULL OR alert_level = %(alert_level)s)
+        ORDER BY timestamp DESC
+        LIMIT %(limit)s
+    """
+    return run_query(
+        sql,
+        {"device_id": device_id, "alert_level": alert_level, "limit": limit},
     )
