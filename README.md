@@ -50,26 +50,31 @@ Requires Docker Desktop and Python 3.11+.
 docker compose up -d
 
 # 2. Create the Airflow metadata database (first time only)
-docker exec -i <postgres-container> psql -U postgres -c "CREATE DATABASE airflow_db;"
+docker exec -i predictive-maintenance-pipeline-postgres-1 psql -U postgres -c "CREATE DATABASE airflow_db;"
 
-# 3. Start the Spark streaming job
-docker exec -it <spark-container> /opt/spark/bin/spark-submit \
+# 3. Start the Spark streaming job (leave this terminal running)
+docker exec -it predictive-maintenance-pipeline-spark-1 /opt/spark/bin/spark-submit \
   --conf spark.jars.ivy=/tmp/.ivy2 \
   --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.2,org.postgresql:postgresql:42.6.0 \
   /spark-jobs/streaming_pipeline.py
 
 # 4. Generate sensor data (new terminal)
-python -m venv venv && venv\Scripts\activate
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 python producer/sensor_producer.py
 
-# 5. Trigger the Airflow DAG at http://localhost:8080 (batch_aggregation)
+# 5. Get the Airflow admin password, then open http://localhost:8080
+#    Username: admin. Trigger the "batch_aggregation" DAG.
+docker compose exec airflow cat /opt/airflow/standalone_admin_password.txt
 
-# 6. Start the API
+# 6. Start the API (new terminal)
 uvicorn api.main:app --reload
 ```
 
 Then open http://localhost:8000/docs.
+
+To shut down cleanly, run `docker compose stop`. This lets Kafka unregister from Zookeeper, which avoids a startup crash next time.
 
 ## API endpoints
 
@@ -78,6 +83,20 @@ Then open http://localhost:8000/docs.
 | `GET /health` | Service health check |
 | `GET /machines` | Latest daily health summary for each turbine |
 | `GET /alerts?device_id=&alert_level=&limit=` | Recent alerts, newest first, with optional filters |
+
+## Screenshots
+
+**Alerts stored in PostgreSQL**
+
+![Postgres alerts](images/postgres-alerts.png)
+
+**FastAPI interactive docs**
+
+![API docs](images/docs.png)
+
+**Airflow DAG run**
+
+![Airflow DAG](images/dag.png)
 
 ## Design decisions
 
@@ -90,4 +109,5 @@ Then open http://localhost:8000/docs.
 
 - Replace thresholds with a trained anomaly-detection model
 - Add a dashboard on top of the API
+- Run the API as a Docker service
 - Add tests and a CI workflow
