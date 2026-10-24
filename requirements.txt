@@ -1,1 +1,4 @@
 kafka-python-ng==2.2.3
+fastapi
+uvicorn
+psycopg2-binary
