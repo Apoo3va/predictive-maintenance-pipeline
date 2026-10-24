@@ -44,9 +44,19 @@ raw = (
     .load()
 )
 
-parsed = raw.selectExpr("CAST(value AS STRING)").select(
+parsed_raw = raw.selectExpr("CAST(value AS STRING)").select(
     from_json(col("value"), schema).alias("data")
 ).select("data.*")
+
+# Noise filter: drop malformed rows and physically impossible sensor values
+parsed = parsed_raw.filter(
+    col("device_id").isNotNull()
+    & col("timestamp").isNotNull()
+    & col("temperature").between(-40, 150)
+    & col("vibration").between(0, 20)
+    & col("pressure").between(0, 100)
+    & col("rpm").between(0, 6000)
+)
 
 # Same rule-based logic the producer uses to inject faults, so you
 # can prove end-to-end: trigger an anomaly, watch it get caught here.
