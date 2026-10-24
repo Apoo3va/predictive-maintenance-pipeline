@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query
 from typing import Optional
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -7,7 +8,7 @@ app = FastAPI(title="Predictive Maintenance API")
 
 # Postgres is exposed on localhost:5432 by docker-compose
 DB_CONFIG = {
-    "host": "localhost",
+    "host": os.getenv("DB_HOST", "localhost"),
     "port": 5432,
     "dbname": "telemetry_db",
     "user": "postgres",

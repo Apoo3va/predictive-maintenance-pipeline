@@ -57,6 +57,14 @@ services:
       - "8080:8080"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+  api:
+    build: ./api
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+    ports:
+      - "8000:8000"
 
 volumes:
   pgdata:
