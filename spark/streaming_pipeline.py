@@ -9,7 +9,7 @@ Run inside the Spark container:
       /spark-jobs/streaming_pipeline.py
 """
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, when
+from pyspark.sql.functions import from_json, col, when, window, avg, stddev, count
 from pyspark.sql.types import StructType, StringType, DoubleType, TimestampType
 
 # Inside Docker, containers reach each other by service name, not localhost.
@@ -94,4 +94,47 @@ query = scored.writeStream \
     .option("checkpointLocation", "/tmp/checkpoints/telemetry") \
     .start()
 
-query.awaitTermination()
+# ---- Rolling features: 5-minute window, sliding every 1 minute, per device ----
+features = (
+    parsed.withWatermark("timestamp", "1 minute")
+    .groupBy(window(col("timestamp"), "5 minutes", "1 minute"), col("device_id"))
+    .agg(
+        avg("temperature").alias("avg_temperature"),
+        stddev("temperature").alias("std_temperature"),
+        avg("vibration").alias("avg_vibration"),
+        stddev("vibration").alias("std_vibration"),
+        count("*").alias("reading_count"),
+    )
+    .select(
+        "device_id",
+        col("window.start").alias("window_start"),
+        col("window.end").alias("window_end"),
+        "avg_temperature",
+        "std_temperature",
+        "avg_vibration",
+        "std_vibration",
+        "reading_count",
+    )
+)
+
+
+def write_features(batch_df, batch_id: int) -> None:
+    if batch_df.rdd.isEmpty():
+        return
+    batch_df.write.format("jdbc") \
+        .option("url", PG_URL) \
+        .option("dbtable", "device_rolling_features") \
+        .options(**PG_PROPS) \
+        .mode("append") \
+        .save()
+
+
+features_query = (
+    features.writeStream
+    .outputMode("append")
+    .foreachBatch(write_features)
+    .option("checkpointLocation", "/tmp/checkpoints/rolling_features")
+    .start()
+)
+
+spark.streams.awaitAnyTermination()

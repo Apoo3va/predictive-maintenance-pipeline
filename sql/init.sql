@@ -32,3 +32,14 @@ CREATE TABLE IF NOT EXISTS device_daily_kpis (
 CREATE INDEX IF NOT EXISTS idx_telemetry_device_time ON raw_telemetry(device_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_alerts_device_time ON sensor_alerts(device_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_telemetry_ts_brin ON raw_telemetry USING BRIN (timestamp);
+CREATE TABLE IF NOT EXISTS device_rolling_features (
+    id SERIAL PRIMARY KEY,
+    device_id VARCHAR(50) NOT NULL,
+    window_start TIMESTAMP NOT NULL,
+    window_end TIMESTAMP NOT NULL,
+    avg_temperature DOUBLE PRECISION,
+    std_temperature DOUBLE PRECISION,
+    avg_vibration DOUBLE PRECISION,
+    std_vibration DOUBLE PRECISION,
+    reading_count INT
+);
