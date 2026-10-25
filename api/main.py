@@ -62,3 +62,22 @@ def list_alerts(
         sql,
         {"device_id": device_id, "alert_level": alert_level, "limit": limit},
     )
+@app.get("/faults")
+def list_faults(
+    device_id: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=200),
+):
+    """Readings the Isolation Forest flagged as anomalous, most anomalous first."""
+    sql = """
+        SELECT device_id, timestamp,
+               round(anomaly_score::numeric, 3) AS anomaly_score,
+               round(band_energy::numeric, 3) AS band_energy,
+               round(kurtosis::numeric, 2) AS kurtosis,
+               round(rms::numeric, 3) AS rms
+        FROM vibration_features
+        WHERE model_anomaly = TRUE
+          AND (%(device_id)s IS NULL OR device_id = %(device_id)s)
+        ORDER BY anomaly_score DESC
+        LIMIT %(limit)s
+    """
+    return run_query(sql, {"device_id": device_id, "limit": limit})
