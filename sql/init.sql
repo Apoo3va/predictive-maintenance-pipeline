@@ -43,3 +43,18 @@ CREATE TABLE IF NOT EXISTS device_rolling_features (
     std_vibration DOUBLE PRECISION,
     reading_count INT
 );
+CREATE TABLE IF NOT EXISTS vibration_features (
+    id SERIAL PRIMARY KEY,
+    device_id VARCHAR(50) NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
+    rpm DOUBLE PRECISION,
+    temperature DOUBLE PRECISION,
+    rms DOUBLE PRECISION,
+    peak DOUBLE PRECISION,
+    crest_factor DOUBLE PRECISION,
+    kurtosis DOUBLE PRECISION,
+    dominant_hz DOUBLE PRECISION,
+    band_energy DOUBLE PRECISION,
+    is_fault BOOLEAN
+);
+CREATE INDEX IF NOT EXISTS idx_vib_device_time ON vibration_features(device_id, timestamp);
