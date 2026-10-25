@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS vibration_features (
     kurtosis DOUBLE PRECISION,
     dominant_hz DOUBLE PRECISION,
     band_energy DOUBLE PRECISION,
+    anomaly_score DOUBLE PRECISION,
+    model_anomaly BOOLEAN,
     is_fault BOOLEAN
 );
+CREATE INDEX IF NOT EXISTS idx_vib_device_time ON vibration_features(device_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_vib_device_time ON vibration_features(device_id, timestamp);
