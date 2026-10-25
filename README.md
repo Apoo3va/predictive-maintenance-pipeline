@@ -126,6 +126,10 @@ To shut down cleanly, run `docker compose stop`. This lets Kafka unregister from
 
 ![Airflow DAG](images/dag.png)
 
+**Isolation Forest faults served by the API**
+
+![Faults endpoint](images/faults.png)
+
 ## Design decisions
 
 - **Two Kafka listeners** so the host (`localhost:9092`) and containers (`kafka:29092`) can both connect.
